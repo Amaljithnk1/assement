@@ -1,28 +1,25 @@
-// Define your datasource (Supabase PostgreSQL database)
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")  // This refers to the DATABASE_URL in your .env file
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Define your models
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 model Student {
-  id          String   @id @default(cuid())
-  name        String
-  cohort      String   // Store like "AY 2024-25" directly
-  courses     Course[] // Many-to-many relationship
-  dateJoined  DateTime @default(now())
-  lastLogin   DateTime @updatedAt
-  status      Boolean  @default(true)
+  id         String   @id @default(cuid())
+  name       String
+  cohort     String
+  dateJoined DateTime @default(now())
+  lastLogin  DateTime @updatedAt
+  status     Boolean  @default(true)
+  courses    Course[] @relation("CourseToStudent")
 }
 
 model Course {
-  id       String    @id @default(cuid())
-  name     String    // e.g. "CBSE 9 Science"
-  icon     String?   // Store icon identifier
-  students Student[] // Many-to-many relationship
+  id       String    @id
+  name     String
+  icon     String?
+  students Student[] @relation("CourseToStudent")
 }

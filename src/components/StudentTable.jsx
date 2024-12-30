@@ -90,14 +90,21 @@ const StudentsTable = () => {
   return (
     <div className="px-6 py-4 bg-white rounded-lg mt-[81px]">
       <div className="flex gap-4 mb-6">
-      <select
-  value={selectedCohort}
-  onChange={(e) => setSelectedCohort(e.target.value)}
-  className="flex items-center gap-2 px-4 py-2 bg-[#E9EDF1] rounded-lg text-[#3F526E] font-bold"
->
-  <option value="AY 2024-25">AY 2024-25</option>
-  <option value="AY 2023-24">AY 2023-24</option>
-</select>
+        <select
+          value={selectedCohort}
+          onChange={(e) => setSelectedCohort(e.target.value)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#E9EDF1] rounded-lg text-[#3F526E] font-bold"
+        >
+          <option value="AY 2024-25">AY 2024-25</option>
+          <option value="AY 2023-24">AY 2023-24</option>
+        </select>
+
+        <select
+          className="flex items-center gap-2 px-4 py-2 bg-[#E9EDF1] rounded-lg text-[#3F526E] font-bold"
+        >
+          <option value="CBSE 9">CBSE 9</option>
+          <option value="CBSE 10">CBSE 10</option>
+        </select>
 
         <button
           onClick={() => setIsModalOpen(true)}
