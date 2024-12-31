@@ -9,20 +9,39 @@ import { supabase } from '../lib/supabaseClient';
 const AddStudentModal = ({ open, setOpen, addStudent, defaultCohort }) => {
   const [name, setName] = useState('');
   const [cohort, setCohort] = useState(defaultCohort || 'AY 2024-25');
+  const [grade, setGrade] = useState('CBSE 9');
   const [courses, setCourses] = useState([]);
   const [status, setStatus] = useState(true);
 
   useEffect(() => {
     if (open) {
       setCohort(defaultCohort || 'AY 2024-25');
+      setGrade('CBSE 9');
+      setCourses([]);
     }
   }, [open, defaultCohort]);
 
   const cohortOptions = ['AY 2024-25', 'AY 2023-24'];
-  const courseOptions = [
-    { id: '1', name: 'CBSE 9 Science', icon: '/cbse09science.svg' },
-    { id: '2', name: 'CBSE 9 Math', icon: '/cbse10maths.svg' },
-  ];
+  const gradeOptions = ['CBSE 9', 'CBSE 10'];
+
+  const getCourseOptions = (selectedGrade) => {
+    if (selectedGrade === 'CBSE 9') {
+      return [
+        { id: '1', name: 'CBSE 9 Science', icon: '/cbse09science.svg' },
+        { id: '2', name: 'CBSE 9 Math', icon: '/cbse09maths.svg' },
+      ];
+    } else {
+      return [
+        { id: '3', name: 'CBSE 10 Science', icon: '/cbse10science.svg' },
+        { id: '4', name: 'CBSE 10 Math', icon: '/cbse10maths.svg' },
+      ];
+    }
+  };
+
+  const handleGradeChange = (newGrade) => {
+    setGrade(newGrade);
+    setCourses([]); // Reset selected courses when grade changes
+  };
 
   const handleCourseToggle = (courseId) => {
     setCourses((prevCourses) =>
@@ -61,8 +80,8 @@ const AddStudentModal = ({ open, setOpen, addStudent, defaultCohort }) => {
 
       // Link selected courses to the student
       const courseLinks = courses.map((courseId) => ({
-        A: courseId, // Course ID
-        B: studentData.id, // Student ID
+        A: courseId, // Using existing course IDs (1,2,3,4)
+        B: studentData.id,
       }));
 
       const { error: linkError } = await supabase
@@ -81,6 +100,7 @@ const AddStudentModal = ({ open, setOpen, addStudent, defaultCohort }) => {
       setOpen(false);
       setName('');
       setCohort('AY 2024-25');
+      setGrade('CBSE 9');
       setCourses([]);
       setStatus(true);
     } catch (error) {
@@ -123,9 +143,24 @@ const AddStudentModal = ({ open, setOpen, addStudent, defaultCohort }) => {
             </select>
           </div>
           <div>
+            <Label htmlFor="grade">Grade</Label>
+            <select
+              id="grade"
+              value={grade}
+              onChange={(e) => handleGradeChange(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:ring focus:ring-blue-500 text-gray-900"
+            >
+              {gradeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <Label>Courses</Label>
             <div className="space-y-2">
-              {courseOptions.map((course) => (
+              {getCourseOptions(grade).map((course) => (
                 <div key={course.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={course.name}

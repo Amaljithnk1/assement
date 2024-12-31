@@ -7,12 +7,13 @@ import { supabase } from "../lib/supabaseClient";
 
 const StudentsTable = () => {
   const [selectedCohort, setSelectedCohort] = useState("AY 2024-25");
+  const [selectedGrade, setSelectedGrade] = useState("CBSE 9");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [students, setStudents] = useState([]);
 
   const fetchStudents = async () => {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("Student")
         .select(`
           id, name, cohort, dateJoined, lastLogin, status, 
@@ -22,9 +23,27 @@ const StudentsTable = () => {
 
       if (error) {
         console.error("Error fetching students:", error);
-      } else {
-        setStudents(data || []);
+        return;
       }
+
+      // Filter courses based on selected grade
+      const filteredData = data.map(student => ({
+        ...student,
+        Course: student.Course?.filter(course => {
+          if (selectedGrade === "CBSE 9") {
+            return course.id === "1" || course.id === "2";
+          } else {
+            return course.id === "3" || course.id === "4";
+          }
+        })
+      }));
+
+      // Only show students who have courses in the selected grade
+      const studentsWithCourses = filteredData.filter(student => 
+        student.Course && student.Course.length > 0
+      );
+
+      setStudents(studentsWithCourses || []);
     } catch (error) {
       console.error("Error fetching students:", error);
     }
@@ -32,58 +51,47 @@ const StudentsTable = () => {
 
   useEffect(() => {
     fetchStudents();
-  }, [selectedCohort]);
+  }, [selectedCohort, selectedGrade]);
 
-  const handleAddStudent = async (newStudent) => {
+  const handleAddStudent = async (studentData) => {
     try {
-      // Validate required fields
-      if (!newStudent.name || !newStudent.cohort) {
-        console.error("Name and cohort are required");
-        return;
-      }
-
-      // First, insert the student
-      const { data: studentData, error: studentError } = await supabase
+      // Fetch the complete student data including courses
+      const { data: newStudentData, error: fetchError } = await supabase
         .from("Student")
-        .insert([
-          {
-            name: newStudent.name,
-            cohort: newStudent.cohort,
-            dateJoined: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            status: newStudent.status || true // Default to true if not provided
-          }
-        ])
-        .select()
+        .select(`
+          id, name, cohort, dateJoined, lastLogin, status,
+          Course(id, name, icon)
+        `)
+        .eq("id", studentData.id)
         .single();
 
-      if (studentError) {
-        console.error("Error adding student:", studentError);
+      if (fetchError) {
+        console.error("Error fetching new student data:", fetchError);
         return;
       }
 
-      // Then, link the courses using the _CourseToStudent table
-      if (newStudent.courses && newStudent.courses.length > 0) {
-        const courseLinks = newStudent.courses.map(courseId => ({
-          A: courseId,        // Course ID goes in column A
-          B: studentData.id   // Student ID goes in column B
-        }));
-
-        const { error: linkError } = await supabase
-          .from('_CourseToStudent')
-          .insert(courseLinks);
-
-        if (linkError) {
-          console.error("Error linking courses:", linkError);
+      // Filter courses based on current grade selection
+      const filteredCourses = newStudentData.Course.filter(course => {
+        if (selectedGrade === "CBSE 9") {
+          return course.id === "1" || course.id === "2";
+        } else {
+          return course.id === "3" || course.id === "4";
         }
+      });
+
+      // Check if student should be displayed in current view
+      if (newStudentData.cohort === selectedCohort && filteredCourses.length > 0) {
+        const studentWithFilteredCourses = {
+          ...newStudentData,
+          Course: filteredCourses
+        };
+        
+        setStudents(prevStudents => [...prevStudents, studentWithFilteredCourses]);
       }
 
-      // Close modal and refresh the table
       setIsModalOpen(false);
-      fetchStudents();
-
     } catch (error) {
-      console.error("Error adding student:", error);
+      console.error("Error processing new student:", error);
     }
   };
 
@@ -100,6 +108,8 @@ const StudentsTable = () => {
         </select>
 
         <select
+          value={selectedGrade}
+          onChange={(e) => setSelectedGrade(e.target.value)}
           className="flex items-center gap-2 px-4 py-2 bg-[#E9EDF1] rounded-lg text-[#3F526E] font-bold"
         >
           <option value="CBSE 9">CBSE 9</option>
@@ -163,7 +173,7 @@ const StudentsTable = () => {
         open={isModalOpen}
         setOpen={setIsModalOpen}
         addStudent={handleAddStudent}
-        defaultCohort={selectedCohort} 
+        defaultCohort={selectedCohort}
       />
     </div>
   );
